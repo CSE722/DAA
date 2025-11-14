@@ -1,0 +1,47 @@
+sources:
+  - name: synthetic_smart_grid
+    path: data/raw/smart_grid_signals.csv
+    format: csv
+    timestamp_col: timestamp
+    timezone: UTC
+    frequency: 15min
+    features:
+      - load_mw
+      - voltage_kv
+      - frequency_hz
+      - solar_mw
+      - wind_mw
+      - hydro_mw
+      - thermal_mw
+      - reactive_power_mvar
+      - power_factor
+      - demand_forecast_mw
+      - import_mw
+      - export_mw
+      - line_temp_c
+      - transformer_load_pct
+      - substation_pressure_kpa
+      - frequency_setpoint_hz
+      - frequency_error_mhz
+      - var_comp_alert
+      - humidity_pct
+      - ambient_temp_c
+      - wind_speed_ms
+      - irradiance_wm2
+      - barometric_kpa
+      - rainfall_mm
+      - pmu_angle_deg
+      - pmu_magnitude
+      - battery_soc_pct
+      - ev_charging_kw
+      - grid_loss_pct
+      - cyber_signal_offset
+      - fault_type
+      - fault_flag
+
+output:
+  interim_table: data/interim/smart_grid_master.parquet
+  schema_report: docs/smart_grid_schema.md
+
+merge_strategy: outer
+sort_timestamps: true

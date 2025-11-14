@@ -14,8 +14,12 @@
 - [ ] Inventory available smart grid datasets (>20 features) and document schema in `docs/`.
 - [ ] Implement ingestion scripts (`src/smart_grid_fault_detection/data_prep/ingest.py`) with checksum validation.
   - [x] Add manifest template + ingestion CLI scaffold (parquet + CSV support).
-- [ ] Build cleaning pipeline: timestamp alignment, missing data imputation, outlier clipping.
+- [ ] Integrate video benchmark converters (e.g., PED2) into the data-prep set.
+  - [x] Added `ped2_converter.py` to emit tabular features from raw frames.
+- [x] Build cleaning pipeline: timestamp alignment, missing data imputation, outlier clipping.
+  - Added `regularize_time_index`, `impute_columns`, and `clip_zscore_outliers` helpers.
 - [ ] Design synthetic fault generator (spikes, dropouts, cyber anomalies) with parameter controls.
+  - [x] Introduced `faults.py` (PED2-informed augmentation) plus synthetic CSV generation script.
 - [ ] Define labeling strategy (Normal vs Fault) and export balanced splits.
 - [ ] Version datasets (DVC or lightweight manifest) to ensure reproducibility.
 

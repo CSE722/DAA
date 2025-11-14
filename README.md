@@ -55,7 +55,30 @@ This repository hosts an end-to-end research/development effort to design and be
        --save-csv
    ```
 4. Inspect `data/interim/*.parquet` outputs and `docs/data_schema.md` before launching modeling experiments.
-5. Sample benchmark data (e.g., the UCSD PED2 surveillance set) is mirrored under `data/raw/ped2`—see `docs/data_sources.md` for provenance before use.
+5. Sample benchmark data (e.g., the UCSD PED2 surveillance set) is mirrored under `data/raw/ped2`—see `docs/data_sources.md` for provenance before use. Convert it into tabular features with:
+   ```bash
+   uv run python -m smart_grid_fault_detection.data_prep.ped2_converter \
+       --root data/raw/ped2 \
+       --output data/interim \
+       --dry-run  # drop this flag to materialize parquet files
+   ```
+6. A synthetic smart-grid telemetry file (`data/raw/smart_grid_signals.csv`) is wired into `configs/data_manifest.yaml`; rerun the ingestion CLI after regenerating or swapping in real SCADA/PMU feeds.
+
+## Cleaning & Fault Augmentation
+- Normalize time indices and impute gaps:
+  ```python
+  from smart_grid_fault_detection.data_prep import regularize_time_index
+
+  cleaned, report = regularize_time_index(df, timestamp_col="timestamp", freq="15min")
+  ```
+- Clip extreme z-score outliers or fill residual NaNs via `clip_zscore_outliers` / `impute_columns`.
+- Inject additional synthetic spikes/dropouts/cyber drifts that borrow severity cues from the PED2 latent motion stats:
+  ```python
+  from smart_grid_fault_detection.data_prep import FaultAugmentConfig, augment_faults
+
+  aug_cfg = FaultAugmentConfig(ped2_stats=Path("data/interim/ped2_training_features.parquet"))
+  df_aug = augment_faults(cleaned, config=aug_cfg)
+  ```
 
 ## Pipeline Snapshot
 1. **Data Prep** – ingest raw feeds, align timestamps, impute gaps, synthesize labeled fault cases.

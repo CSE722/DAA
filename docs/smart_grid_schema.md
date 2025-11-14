@@ -1,0 +1,35 @@
+# Data Schema
+
+- **load_mw**: `float64`
+- **voltage_kv**: `float64`
+- **frequency_hz**: `float64`
+- **solar_mw**: `float64`
+- **wind_mw**: `float64`
+- **hydro_mw**: `float64`
+- **thermal_mw**: `float64`
+- **reactive_power_mvar**: `float64`
+- **power_factor**: `float64`
+- **demand_forecast_mw**: `float64`
+- **import_mw**: `float64`
+- **export_mw**: `float64`
+- **line_temp_c**: `float64`
+- **transformer_load_pct**: `float64`
+- **substation_pressure_kpa**: `float64`
+- **frequency_setpoint_hz**: `float64`
+- **frequency_error_mhz**: `float64`
+- **var_comp_alert**: `float64`
+- **humidity_pct**: `float64`
+- **ambient_temp_c**: `float64`
+- **wind_speed_ms**: `float64`
+- **irradiance_wm2**: `float64`
+- **barometric_kpa**: `float64`
+- **rainfall_mm**: `float64`
+- **pmu_angle_deg**: `float64`
+- **pmu_magnitude**: `float64`
+- **battery_soc_pct**: `float64`
+- **ev_charging_kw**: `float64`
+- **grid_loss_pct**: `float64`
+- **cyber_signal_offset**: `float64`
+- **fault_type**: `object`
+- **fault_flag**: `int64`
+- **timestamp**: `datetime64[ns, UTC]`
