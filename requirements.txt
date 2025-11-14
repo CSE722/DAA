@@ -1,0 +1,2 @@
+# This project is managed with uv. Regenerate this file via:
+#   uv pip compile pyproject.toml > requirements.txt
