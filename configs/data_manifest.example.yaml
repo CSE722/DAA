@@ -1,0 +1,48 @@
+# Copy this file to configs/data_manifest.yaml and tailor to your environment.
+sources:
+  - name: scada_load
+    path: data/raw/scada_load.csv
+    format: csv
+    timestamp_col: timestamp
+    timezone: Asia/Kolkata
+    frequency: 15T
+    features:
+      - load_mw
+      - voltage_kv
+      - frequency_hz
+      - temperature_c
+    dtypes:
+      load_mw: float32
+      voltage_kv: float32
+      frequency_hz: float32
+      temperature_c: float32
+
+  - name: generation_mix
+    path: data/raw/generation_mix.csv
+    format: csv
+    timestamp_col: timestamp
+    timezone: Asia/Kolkata
+    frequency: 15T
+    features:
+      - solar_mw
+      - hydro_mw
+      - thermal_mw
+      - wind_mw
+
+  - name: weather_station
+    path: data/raw/weather_station.parquet
+    format: parquet
+    timestamp_col: timestamp
+    timezone: UTC
+    frequency: 15T
+    features:
+      - humidity_pct
+      - wind_speed_ms
+      - irradiance_wm2
+
+output:
+  interim_table: data/interim/master_15min.parquet
+  schema_report: docs/data_schema.md
+
+merge_strategy: outer
+sort_timestamps: true

@@ -45,6 +45,17 @@ This repository hosts an end-to-end research/development effort to design and be
 5. Place raw grid datasets inside `data/raw/` (keep write-protection on originals) before running training scripts.
 6. Manage experiment variations by copying `configs/base.yaml` and pointing the CLI to the new file via `--config`.
 
+## Data Preparation Workflow
+1. Copy `configs/data_manifest.example.yaml` → `configs/data_manifest.yaml` and edit each source block (paths, features, timezone, dtypes).
+2. Stage the referenced files under `data/raw/` (CSV or Parquet supported).
+3. Generate aligned interim tables plus a schema report:
+   ```bash
+   uv run python -m smart_grid_fault_detection.data_prep.ingest \
+       --manifest configs/data_manifest.yaml \
+       --save-csv
+   ```
+4. Inspect `data/interim/*.parquet` outputs and `docs/data_schema.md` before launching modeling experiments.
+
 ## Pipeline Snapshot
 1. **Data Prep** – ingest raw feeds, align timestamps, impute gaps, synthesize labeled fault cases.
 2. **Dimensionality Reduction** – evaluate PCA variance retention, t-SNE/UMAP visualization, and LSTM autoencoder latent compression for different window sizes.

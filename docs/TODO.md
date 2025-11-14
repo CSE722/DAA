@@ -12,7 +12,8 @@
 
 ## 2. Data Acquisition, Labeling & Management
 - [ ] Inventory available smart grid datasets (>20 features) and document schema in `docs/`.
-- [ ] Implement ingestion scripts (`src/data_prep/ingest.py`) with checksum validation.
+- [ ] Implement ingestion scripts (`src/smart_grid_fault_detection/data_prep/ingest.py`) with checksum validation.
+  - [x] Add manifest template + ingestion CLI scaffold (parquet + CSV support).
 - [ ] Build cleaning pipeline: timestamp alignment, missing data imputation, outlier clipping.
 - [ ] Design synthetic fault generator (spikes, dropouts, cyber anomalies) with parameter controls.
 - [ ] Define labeling strategy (Normal vs Fault) and export balanced splits.
