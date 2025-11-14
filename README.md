@@ -55,6 +55,7 @@ This repository hosts an end-to-end research/development effort to design and be
        --save-csv
    ```
 4. Inspect `data/interim/*.parquet` outputs and `docs/data_schema.md` before launching modeling experiments.
+5. Sample benchmark data (e.g., the UCSD PED2 surveillance set) is mirrored under `data/raw/ped2`—see `docs/data_sources.md` for provenance before use.
 
 ## Pipeline Snapshot
 1. **Data Prep** – ingest raw feeds, align timestamps, impute gaps, synthesize labeled fault cases.

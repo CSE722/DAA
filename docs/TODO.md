@@ -21,6 +21,7 @@
 
 ## 3. Exploratory Data Analysis & Baselines
 - [ ] Create `notebooks/eda/01_data_overview.ipynb` for descriptive stats, correlation heatmaps.
+  - [x] Stub notebook with project bootstrap + interim data sanity checks.
 - [ ] Visualize temporal patterns (daily/weekly seasonality, load-generation coupling).
 - [ ] Implement sliding-window z-score detector baseline in `src/detectors/zscore.py`.
 - [ ] Benchmark baseline accuracy/latency and log results in `reports/`.
