@@ -20,3 +20,4 @@
   - Already wired into `configs/data_manifest.yaml` for ingestion experiments.
   - Fault windows (spike, dropout, cyber drift) were injected with randomized durations/magnitudes to mimic rare events.
   - Extend/regen by editing the generator script snippet in the README or converting it into a reusable utility under `src/data_prep`.
+  - Cleaned/augmented derivatives live in `data/processed/smart_grid_clean.parquet` and `data/processed/smart_grid_augmented.parquet` (produced via `process_pipeline.py`).

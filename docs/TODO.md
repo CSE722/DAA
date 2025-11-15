@@ -21,25 +21,27 @@
 - [ ] Design synthetic fault generator (spikes, dropouts, cyber anomalies) with parameter controls.
   - [x] Introduced `faults.py` (PED2-informed augmentation) plus synthetic CSV generation script.
 - [ ] Define labeling strategy (Normal vs Fault) and export balanced splits.
+  - [x] Synthetic dataset + augmentation pipeline emit `fault_flag` / `fault_type`.
 - [ ] Version datasets (DVC or lightweight manifest) to ensure reproducibility.
 
 ## 3. Exploratory Data Analysis & Baselines
-- [ ] Create `notebooks/eda/01_data_overview.ipynb` for descriptive stats, correlation heatmaps.
-  - [x] Stub notebook with project bootstrap + interim data sanity checks.
+- [x] Create `notebooks/eda/01_data_overview.ipynb` for descriptive stats, correlation heatmaps, and processed-data comparisons.
 - [ ] Visualize temporal patterns (daily/weekly seasonality, load-generation coupling).
-- [ ] Implement sliding-window z-score detector baseline in `src/detectors/zscore.py`.
-- [ ] Benchmark baseline accuracy/latency and log results in `reports/`.
+- [x] Implement sliding-window z-score detector baseline in `src/smart_grid_fault_detection/detectors/zscore.py`.
+- [x] Benchmark baseline accuracy/latency and log results in `reports/`.
+  - [x] Sweep z-score windows/thresholds and store metrics in `reports/zscore_sweep`.
+  - [x] Record runtime stats via `zscore_benchmark.py` (`reports/zscore_benchmark`).
 
 ## 4. Dimensionality Reduction Experiments
-- [ ] Implement PCA utilities (`src/models/pca/pipeline.py`) with variance-retention plots.
-- [ ] Add t-SNE/UMAP visualization scripts for latent structure exploration.
+- [x] Implement PCA utilities (`smart_grid_fault_detection/models/pca_pipeline.py`) with variance stats + projections saved to disk.
+- [x] Add t-SNE/UMAP visualization scripts for latent structure exploration.
 - [ ] Prototype LSTM autoencoder architecture search (encoder depth, bottleneck size, dropout).
 - [ ] Compare reconstruction error distributions between normal and fault windows.
 - [ ] Evaluate compression ratios vs detection quality trade-offs.
 
 ## 5. Modeling & Detection
 ### 5.1 PCA + Classical Detectors
-- [ ] Train PCA-reduced feature set feeding into SVM / isolation forest / one-class SVM.
+- [x] Train PCA-reduced feature set feeding into Isolation Forest / One-Class SVM (`pca_detectors.py`).
 - [ ] Optimize thresholds and number of retained components per detector.
 
 ### 5.2 LSTM Autoencoder Anomaly Detection

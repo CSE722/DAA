@@ -1,0 +1,8 @@
+{
+  "rows": 1344,
+  "feature_count": 30,
+  "timestamp_col": "timestamp",
+  "scaler": "standard",
+  "n_components": 17,
+  "explained_variance": 0.9163671135902405
+}
