@@ -1,0 +1,6 @@
+{
+  "cyber": 0,
+  "dropout": 1,
+  "normal": 2,
+  "spike": 3
+}

@@ -35,22 +35,22 @@
 ## 4. Dimensionality Reduction Experiments
 - [x] Implement PCA utilities (`smart_grid_fault_detection/models/pca_pipeline.py`) with variance stats + projections saved to disk.
 - [x] Add t-SNE/UMAP visualization scripts for latent structure exploration.
-- [ ] Prototype LSTM autoencoder architecture search (encoder depth, bottleneck size, dropout).
-- [ ] Compare reconstruction error distributions between normal and fault windows.
+- [x] Prototype LSTM autoencoder architecture search (encoder depth, bottleneck size, dropout).
+- [x] Compare reconstruction error distributions between normal and fault windows (feature/time heatmaps).
 - [ ] Evaluate compression ratios vs detection quality trade-offs.
 
 ## 5. Modeling & Detection
 ### 5.1 PCA + Classical Detectors
 - [x] Train PCA-reduced feature set feeding into Isolation Forest / One-Class SVM (`pca_detectors.py`).
-- [ ] Optimize thresholds and number of retained components per detector.
+- [x] Optimize thresholds and number of retained components per detector (`pca_sweep.py` summary).
 
 ### 5.2 LSTM Autoencoder Anomaly Detection
-- [ ] Implement training loop with teacher forcing, early stopping, learning-rate scheduling.
-- [ ] Calibrate anomaly score thresholds using validation ROC/PR curves.
+- [x] Implement training loop with teacher forcing, early stopping, learning-rate scheduling.
+- [x] Calibrate anomaly score thresholds using validation ROC/PR curves.
 - [ ] Add capability for multivariate reconstruction error heatmaps.
 
 ### 5.3 CNN Fault-Type Classifier
-- [ ] Architect CNN (1D/2D) for classifying spikes vs dropouts vs cyber anomalies.
+- [x] Architect CNN (1D) for classifying spikes vs dropouts vs cyber anomalies.
 - [ ] Augment dataset with labeled subclasses and evaluate confusion matrix.
 - [ ] Explore hybrid models (latent features from autoencoder feeding CNN head).
 

@@ -142,6 +142,19 @@ This repository hosts an end-to-end research/development effort to design and be
       --output-dir reports/pca_detectors
   ```
 - Metrics (`*_metrics.json`) and timestamp-level predictions (`*_predictions.csv`) are stored in `reports/pca_detectors/` for downstream reporting/comparison.
+- Sweep principal-component counts and detector hyperparameters to find the best combo:
+  ```bash
+  uv run python -m smart_grid_fault_detection.detectors.pca_sweep \
+      --projection data/processed/pca/pca_projection.parquet \
+      --labels data/processed/smart_grid_clean.parquet \
+      --components 8 12 16 \
+      --detectors isolation_forest one_class_svm \
+      --contaminations 0.01 0.02 0.03 \
+      --nus 0.05 0.1 \
+      --train-fractions 0.6 0.7 0.8 \
+      --output-dir reports/pca_detectors/sweep
+  ```
+- Output: `reports/pca_detectors/sweep/pca_detector_sweep.csv` sorted by F1 plus per-run artifacts. Current best: Isolation Forest with 16 PCs, contamination 0.03, train fraction 0.8 (F1 ≈ 0.63).
 
 ## LSTM Autoencoder (Neural Detector)
 - Train a sequence-to-sequence autoencoder on sliding windows of the cleaned dataset (defaults: 32-sample windows, stacked encoder/decoder). Metal acceleration is provided through `tensorflow-macos`/`tensorflow-metal`.
@@ -160,9 +173,55 @@ This repository hosts an end-to-end research/development effort to design and be
   print(tf.config.list_physical_devices("GPU"))
   PY
   ```
+- Evaluate reconstruction errors across multiple percentiles and export ROC/PR curves:
+  ```bash
+  uv run python -m smart_grid_fault_detection.models.autoencoder_eval \
+      --errors models/autoencoder_baseline/reconstruction_errors.csv \
+      --metadata models/autoencoder_baseline/metadata.json \
+      --dataset data/processed/smart_grid_clean.parquet \
+      --output-dir reports/autoencoder
+  ```
+- Output: `autoencoder_threshold_summary.csv`, `autoencoder_roc.csv`, and `autoencoder_pr_auc.json` for reporting threshold trade-offs.
+- Apply the best-performing percentile (80th → threshold ≈ 0.657) to generate timestamp-level predictions/metrics:
+  ```bash
+  uv run python -m smart_grid_fault_detection.detectors.autoencoder_detector \
+      --errors models/autoencoder_baseline/reconstruction_errors.csv \
+      --metadata models/autoencoder_baseline/metadata.json \
+      --dataset data/processed/smart_grid_clean.parquet \
+      --threshold 0.657140194 \
+      --output-dir reports/autoencoder
+  ```
+- This writes `autoencoder_predictions.csv` and `autoencoder_metrics.json` (current Metal-trained model: accuracy ≈ 0.733, precision ≈ 0.10, recall ≈ 0.19, F1 ≈ 0.13). Adjust the threshold or architecture as you iterate.
+- Run light-weight architecture searches to compare sequence lengths/hidden stacks (the script reuses the training + eval pipeline and publishes a summary):
+  ```bash
+  uv run python -m smart_grid_fault_detection.models.autoencoder_search \
+      --sequence-lengths 32 \
+      --latent-dims 24 \
+      --hidden-options 96,48 64,32 \
+      --dropouts 0.1 \
+      --epochs 5
+  ```
+  Results are saved under `models/autoencoder_search_runs/autoencoder_search_summary.csv` (current best F1 ≈ 0.23 for both tested stacks).
+- Produce reconstruction-error heatmaps to see which features/time steps dominate AE scores:
+  ```bash
+  uv run python -m smart_grid_fault_detection.models.autoencoder_heatmap \
+      --model-dir models/autoencoder_baseline \
+      --dataset data/processed/smart_grid_clean.parquet \
+      --output-dir reports/autoencoder
+  ```
+  Generates `autoencoder_feature_errors.csv` (per-feature mean absolute error) and `autoencoder_time_feature_heatmap.csv` (sequence index × feature grid).
 
-## CNN Fault-Type Classifier (Upcoming)
-- `src/models/cnn/` is reserved for a convolutional classifier that will ingest spatial-temporal tensors (PED2-derived grids or reshaped SCADA windows) to label spikes vs dropouts vs cyber anomalies. Integrate shared preprocessing (scaling, windowing) from the autoencoder pipeline and log metrics next to the PCA/z-score baselines once implemented.
+## CNN Fault-Type Classifier
+- Train a 1D CNN on sliding windows (default: 48 samples) to classify `fault_type`:
+  ```bash
+  uv run python -m smart_grid_fault_detection.models.cnn_classifier \
+      --input data/processed/smart_grid_clean.parquet \
+      --sequence-length 48 \
+      --epochs 15 \
+      --batch-size 64 \
+      --output-dir models/cnn_classifier
+  ```
+- Artifacts: `cnn_fault_classifier.keras`, `scaler.joblib`, `label_map.json`, `metrics.json`, and `classification_report.json`. Current run achieves test accuracy ≈ 0.94 (macro metrics remain low because the held-out set only contained the `normal` class—augment the evaluation set for better coverage).
 
 ## Manifold Visualization (t-SNE / UMAP)
 - Generate 2-D embeddings (defaults to PCA projection input, colored by `fault_type`):

@@ -1,0 +1,8 @@
+{
+  "sequence_length": 32,
+  "feature_count": 30,
+  "train_samples": 1051,
+  "val_samples": 262,
+  "threshold_95": 0.9166017174720764,
+  "scaler": "standard"
+}

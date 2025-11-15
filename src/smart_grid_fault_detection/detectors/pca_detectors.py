@@ -8,11 +8,12 @@ from typing import Dict, List, Literal
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_datetime64_any_dtype
 from rich.console import Console
 from sklearn.ensemble import IsolationForest
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from sklearn.svm import OneClassSVM
-from pandas.api.types import is_datetime64_any_dtype
+import re
 
 
 def _normalize_timestamp(series: pd.Series) -> pd.Series:
@@ -43,6 +44,7 @@ class DetectorConfig:
     nu: float = 0.05
     random_state: int = 13
     output_dir: Path = Path("reports/pca_detectors")
+    component_count: int | None = None
 
 
 def _load_frames(cfg: DetectorConfig) -> pd.DataFrame:
@@ -70,8 +72,18 @@ def _load_frames(cfg: DetectorConfig) -> pd.DataFrame:
     return merged
 
 
+def _sorted_pc_columns(columns: List[str]) -> List[str]:
+    def key(col: str) -> int:
+        match = re.search(r"pc(\d+)", col)
+        return int(match.group(1)) if match else 0
+
+    return sorted(columns, key=key)
+
+
 def _split_data(df: pd.DataFrame, cfg: DetectorConfig) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    feature_cols = [c for c in df.columns if c.startswith("pc")]
+    feature_cols = _sorted_pc_columns([c for c in df.columns if c.startswith("pc")])
+    if cfg.component_count:
+        feature_cols = feature_cols[: cfg.component_count]
     if not feature_cols:
         raise ValueError("Projection dataframe missing pc* columns.")
 
@@ -169,6 +181,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--no-normal-filter", action="store_true", help="Train on all samples, not just normal ones.")
     parser.add_argument("--contamination", type=float, default=0.02)
     parser.add_argument("--nu", type=float, default=0.05)
+    parser.add_argument("--components", type=int, default=None, help="Number of principal components to keep.")
     parser.add_argument("--output-dir", type=Path, default=DetectorConfig.output_dir)
     parser.add_argument("--random-state", type=int, default=13)
     return parser
@@ -188,6 +201,7 @@ def main(argv: List[str] | None = None) -> None:
         train_on_normal_only=not args.no_normal_filter,
         contamination=args.contamination,
         nu=args.nu,
+        component_count=args.components,
         random_state=args.random_state,
         output_dir=args.output_dir,
     )
