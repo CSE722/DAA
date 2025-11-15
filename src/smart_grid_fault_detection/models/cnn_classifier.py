@@ -11,8 +11,12 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from rich.console import Console
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.utils.class_weight import compute_class_weight
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 console = Console()
 
@@ -44,11 +48,12 @@ def _load_dataset(cfg: CNNConfig) -> pd.DataFrame:
     return df
 
 
-def _build_sequences(df: pd.DataFrame, cfg: CNNConfig) -> tuple[np.ndarray, np.ndarray, List[str]]:
+def _build_sequences(df: pd.DataFrame, cfg: CNNConfig):
     feature_cols = df.select_dtypes(include=["number"]).columns.tolist()
     if cfg.label_col in feature_cols:
         feature_cols.remove(cfg.label_col)
     label_series = df[cfg.label_col]
+    timestamps = df[cfg.timestamp_col]
     values = df[feature_cols].to_numpy(dtype=np.float32)
 
     scaler = StandardScaler()
@@ -56,28 +61,51 @@ def _build_sequences(df: pd.DataFrame, cfg: CNNConfig) -> tuple[np.ndarray, np.n
 
     sequences = []
     labels = []
+    seq_timestamps = []
     for start in range(0, len(values) - cfg.sequence_length + 1):
         end = start + cfg.sequence_length
         sequences.append(values[start:end])
         labels.append(label_series.iloc[end - 1])
+        seq_timestamps.append(timestamps.iloc[end - 1])
     sequences = np.stack(sequences)
     label_arr = np.array(labels)
     unique_labels = sorted(pd.unique(label_arr))
     label_map = {label: idx for idx, label in enumerate(unique_labels)}
     y = np.array([label_map[label] for label in label_arr])
 
-    return sequences, y, feature_cols, scaler, label_map
+    seq_timestamps = np.array(seq_timestamps)
+    return sequences, y, seq_timestamps, feature_cols, scaler, label_map
 
 
-def _train_val_test_split(sequences: np.ndarray, labels: np.ndarray, cfg: CNNConfig):
-    total = len(sequences)
-    test_len = int(total * cfg.test_fraction)
-    val_len = int(total * cfg.val_fraction)
-    train_len = total - val_len - test_len
-    X_train, y_train = sequences[:train_len], labels[:train_len]
-    X_val, y_val = sequences[train_len : train_len + val_len], labels[train_len : train_len + val_len]
-    X_test, y_test = sequences[train_len + val_len :], labels[train_len + val_len :]
-    return (X_train, y_train), (X_val, y_val), (X_test, y_test)
+def _train_val_test_split(sequences, labels, timestamps, cfg: CNNConfig):
+    temp_size = cfg.val_fraction + cfg.test_fraction
+    X_train, X_temp, y_train, y_temp, ts_train, ts_temp = train_test_split(
+        sequences,
+        labels,
+        timestamps,
+        test_size=temp_size,
+        stratify=labels,
+        shuffle=True,
+        random_state=cfg.random_state,
+    )
+    if temp_size == 0:
+        return (X_train, y_train, ts_train), (np.empty((0,)), np.empty((0,)), np.empty((0,))), (
+            np.empty((0,)),
+            np.empty((0,)),
+            np.empty((0,)),
+        )
+
+    val_ratio = cfg.val_fraction / temp_size
+    X_val, X_test, y_val, y_test, ts_val, ts_test = train_test_split(
+        X_temp,
+        y_temp,
+        ts_temp,
+        test_size=cfg.test_fraction / temp_size,
+        stratify=y_temp,
+        shuffle=True,
+        random_state=cfg.random_state,
+    )
+    return (X_train, y_train, ts_train), (X_val, y_val, ts_val), (X_test, y_test, ts_test)
 
 
 def _build_model(cfg: CNNConfig, n_features: int, n_classes: int) -> tf.keras.Model:
@@ -102,10 +130,16 @@ def run_cnn(cfg: CNNConfig) -> Dict[str, Path]:
     tf.keras.utils.set_random_seed(cfg.random_state)
 
     df = _load_dataset(cfg)
-    sequences, labels, feature_cols, scaler, label_map = _build_sequences(df, cfg)
-    (X_train, y_train), (X_val, y_val), (X_test, y_test) = _train_val_test_split(sequences, labels, cfg)
+    sequences, labels, seq_timestamps, feature_cols, scaler, label_map = _build_sequences(df, cfg)
+    (X_train, y_train, ts_train), (X_val, y_val, ts_val), (X_test, y_test, ts_test) = _train_val_test_split(
+        sequences, labels, seq_timestamps, cfg
+    )
 
     model = _build_model(cfg, sequences.shape[2], len(label_map))
+    classes = np.unique(labels)
+    weights = compute_class_weight(class_weight="balanced", classes=classes, y=labels)
+    class_weight = {cls: weight for cls, weight in zip(classes, weights)}
+
     callbacks = []
     if len(X_val) > 0:
         callbacks.append(
@@ -120,6 +154,7 @@ def run_cnn(cfg: CNNConfig) -> Dict[str, Path]:
         validation_data=(X_val, y_val) if len(X_val) > 0 else None,
         verbose=1,
         callbacks=callbacks,
+        class_weight=class_weight,
     )
 
     test_metrics = model.evaluate(X_test, y_test, verbose=0)
@@ -151,6 +186,32 @@ def run_cnn(cfg: CNNConfig) -> Dict[str, Path]:
     report_path = cfg.output_dir / "classification_report.json"
     report_path.write_text(json.dumps(report, indent=2))
 
+    cm = confusion_matrix(y_test, y_pred, labels=list(range(len(idx_to_label))))
+    cm_path = cfg.output_dir / "confusion_matrix.json"
+    cm_path.write_text(json.dumps({"labels": idx_to_label, "matrix": cm.tolist()}, indent=2))
+
+    plt.figure(figsize=(6, 5))
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=idx_to_label, yticklabels=idx_to_label)
+    plt.xlabel("Predicted")
+    plt.ylabel("True")
+    plt.title("CNN Fault-Type Confusion Matrix")
+    plt.tight_layout()
+    cm_plot = cfg.output_dir / "confusion_matrix.png"
+    plt.savefig(cm_plot, dpi=200)
+    plt.close()
+
+    preds_df = pd.DataFrame(
+        {
+            cfg.timestamp_col: ts_test,
+            "true_label": [idx_to_label[idx] for idx in y_test],
+            "pred_label": [idx_to_label[idx] for idx in y_pred],
+        }
+    )
+    for idx, label in enumerate(idx_to_label):
+        preds_df[f"prob_{label}"] = preds[:, idx]
+    preds_path = cfg.output_dir / "predictions.csv"
+    preds_df.to_csv(preds_path, index=False)
+
     metrics_summary = {
         "test_loss": float(test_metrics[0]),
         "test_accuracy": float(test_metrics[1]),
@@ -167,6 +228,9 @@ def run_cnn(cfg: CNNConfig) -> Dict[str, Path]:
         "label_map": label_map_path,
         "report": report_path,
         "metrics": metrics_path,
+        "confusion_matrix": cm_path,
+        "confusion_matrix_plot": cm_plot,
+        "predictions": preds_path,
     }
 
 

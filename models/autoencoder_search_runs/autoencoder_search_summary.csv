@@ -1,3 +1,2 @@
-sequence_length,latent_dim,hidden_units,dropout,best_percentile,best_threshold,precision,recall,f1,model_dir
-32,24,96-48,0.1,80.0,0.716154936,0.1749049429657794,0.3333333333333333,0.2294264339152119,models/autoencoder_search_runs/seq32_lat24_hid96-48_drop0p1
-32,24,64-32,0.1,80.0,0.7334657400000001,0.1749049429657794,0.3333333333333333,0.2294264339152119,models/autoencoder_search_runs/seq32_lat24_hid64-32_drop0p1
+sequence_length,latent_dim,hidden_units,dropout,best_percentile,best_threshold,precision,recall,f1,compression_ratio,model_dir
+32,24,96-48,0.1,80.0,0.7405975760000001,0.1863117870722433,0.3550724637681159,0.2443890274314214,0.025,models/autoencoder_search_runs/seq32_lat24_hid96-48_drop0p1

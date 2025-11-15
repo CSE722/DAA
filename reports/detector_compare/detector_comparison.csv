@@ -1,0 +1,5 @@
+detector,accuracy,macro_precision,macro_recall,macro_f1,support,predictions_path
+zscore,0.8958333333333334,0.6918711656441718,0.5601341120484534,0.5788531268185685,1344.0,reports/zscore/zscore_predictions.csv
+pca_iforest,0.90625,0.7495101120272119,0.6621962650515538,0.6931818181818181,1344.0,reports/pca_detectors/sweep/isolation_forest_comp16_param0p03_frac0p8/isolation_forest_predictions.csv
+autoencoder,0.733230531996916,0.49599807135969143,0.4932538045041327,0.4865470338944266,1297.0,reports/autoencoder/autoencoder_predictions.csv
+cnn_classifier,0.8564102564102564,0.5545634920634921,0.9112068965517242,0.6454441776371318,195.0,models/cnn_classifier/predictions.csv

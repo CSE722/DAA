@@ -192,16 +192,16 @@ This repository hosts an end-to-end research/development effort to design and be
       --output-dir reports/autoencoder
   ```
 - This writes `autoencoder_predictions.csv` and `autoencoder_metrics.json` (current Metal-trained model: accuracy ≈ 0.733, precision ≈ 0.10, recall ≈ 0.19, F1 ≈ 0.13). Adjust the threshold or architecture as you iterate.
-- Run light-weight architecture searches to compare sequence lengths/hidden stacks (the script reuses the training + eval pipeline and publishes a summary):
+- Run light-weight architecture searches to compare sequence lengths/hidden stacks (the script reuses the training + eval pipeline and publishes a summary with compression ratios):
   ```bash
   uv run python -m smart_grid_fault_detection.models.autoencoder_search \
       --sequence-lengths 32 \
       --latent-dims 24 \
-      --hidden-options 96,48 64,32 \
+      --hidden-options 96,48 \
       --dropouts 0.1 \
-      --epochs 5
+      --epochs 3
   ```
-  Results are saved under `models/autoencoder_search_runs/autoencoder_search_summary.csv` (current best F1 ≈ 0.23 for both tested stacks).
+  Results are saved under `models/autoencoder_search_runs/autoencoder_search_summary.csv` (includes compression ratio; current sample run reaches F1 ≈ 0.24 with ~2.5% latent compression).
 - Produce reconstruction-error heatmaps to see which features/time steps dominate AE scores:
   ```bash
   uv run python -m smart_grid_fault_detection.models.autoencoder_heatmap \
@@ -209,19 +209,31 @@ This repository hosts an end-to-end research/development effort to design and be
       --dataset data/processed/smart_grid_clean.parquet \
       --output-dir reports/autoencoder
   ```
-  Generates `autoencoder_feature_errors.csv` (per-feature mean absolute error) and `autoencoder_time_feature_heatmap.csv` (sequence index × feature grid).
+  Generates CSVs plus PNG plots (`autoencoder_feature_errors.png`, `autoencoder_time_feature_heatmap.png`) to drop into reports.
 
 ## CNN Fault-Type Classifier
-- Train a 1D CNN on sliding windows (default: 48 samples) to classify `fault_type`:
+- Train a class-weighted 1D CNN on stratified sliding windows (default: 48 samples) to classify `fault_type`:
   ```bash
   uv run python -m smart_grid_fault_detection.models.cnn_classifier \
       --input data/processed/smart_grid_clean.parquet \
       --sequence-length 48 \
-      --epochs 15 \
+      --epochs 10 \
       --batch-size 64 \
       --output-dir models/cnn_classifier
   ```
-- Artifacts: `cnn_fault_classifier.keras`, `scaler.joblib`, `label_map.json`, `metrics.json`, and `classification_report.json`. Current run achieves test accuracy ≈ 0.94 (macro metrics remain low because the held-out set only contained the `normal` class—augment the evaluation set for better coverage).
+- Artifacts: `cnn_fault_classifier.keras`, `scaler.joblib`, `label_map.json`, `metrics.json`, `classification_report.json`, `confusion_matrix.json`, and `predictions.csv`. Current run achieves test accuracy ≈ 0.86 with macro F1 ≈ 0.65 (cyber/dropout/spike classes now present in the test split thanks to stratification).
+
+## Detector Comparison
+- Summarize the detectors in one table:
+  ```bash
+  uv run python -m smart_grid_fault_detection.detectors.eval_compare \
+      --detector name=zscore,path=reports/zscore/zscore_predictions.csv,label=fault_flag,pred=prediction \
+      --detector name=pca_iforest,path=reports/pca_detectors/sweep/isolation_forest_comp16_param0p03_frac0p8/isolation_forest_predictions.csv,label=fault_flag,pred=prediction \
+      --detector name=autoencoder,path=reports/autoencoder/autoencoder_predictions.csv,label=fault_flag,pred=prediction \
+      --detector name=cnn_classifier,path=models/cnn_classifier/predictions.csv,label=true_label,pred=pred_label \
+      --output reports/detector_compare
+  ```
+- Output: `reports/detector_compare/detector_comparison.csv` (macro precision/recall/F1 + accuracy). Example: PCA Isolation Forest (16 PCs, contamination 0.03, train fraction 0.8) hits accuracy ≈ 0.91 / macro F1 ≈ 0.69; CNN macro F1 ≈ 0.65; z-score ≈ 0.58 macro F1; autoencoder ≈ 0.49 macro F1.
 
 ## Manifold Visualization (t-SNE / UMAP)
 - Generate 2-D embeddings (defaults to PCA projection input, colored by `fault_type`):

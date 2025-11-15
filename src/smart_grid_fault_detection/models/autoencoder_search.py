@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from dataclasses import dataclass
 from itertools import product
 from pathlib import Path
@@ -54,6 +55,9 @@ def search(cfg: SearchConfig) -> Path:
         eval_paths = evaluate(eval_cfg)
         summary_df = pd.read_csv(eval_paths["summary"])
         best_row = summary_df.sort_values("f1", ascending=False).iloc[0]
+        run_metadata = json.loads(Path(outputs["metadata"]).read_text())
+        feature_count = run_metadata.get("feature_count", 0) or 1
+        compression_ratio = latent / (feature_count * seq_len)
         rows.append(
             {
                 "sequence_length": seq_len,
@@ -65,6 +69,7 @@ def search(cfg: SearchConfig) -> Path:
                 "precision": best_row["precision"],
                 "recall": best_row["recall"],
                 "f1": best_row["f1"],
+                "compression_ratio": compression_ratio,
                 "model_dir": str(run_dir),
             }
         )

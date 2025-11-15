@@ -9,6 +9,8 @@ from typing import List
 import joblib
 import numpy as np
 import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 import tensorflow as tf
 
 @dataclass
@@ -66,7 +68,33 @@ def build_heatmaps(cfg: HeatmapConfig) -> dict[str, Path]:
     heatmap_path = cfg.output_dir / "autoencoder_time_feature_heatmap.csv"
     heatmap_df.to_csv(heatmap_path, index=False)
 
-    return {"feature_errors": feature_path, "heatmap": heatmap_path}
+    sorted_features = feature_df.sort_values("avg_abs_error", ascending=False)
+    plt.figure(figsize=(10, 6))
+    sns.barplot(data=sorted_features, x="avg_abs_error", y="feature", palette="magma")
+    plt.title("Average Absolute Reconstruction Error per Feature")
+    plt.xlabel("Avg |Error|")
+    plt.ylabel("Feature")
+    plt.tight_layout()
+    feature_plot = cfg.output_dir / "autoencoder_feature_errors.png"
+    plt.savefig(feature_plot, dpi=200)
+    plt.close()
+
+    plt.figure(figsize=(12, 6))
+    sns.heatmap(heatmap_matrix, cmap="mako", yticklabels=range(seq_len), xticklabels=features)
+    plt.title("Reconstruction Error Heatmap (Time Index × Feature)")
+    plt.ylabel("Sequence Index")
+    plt.xlabel("Feature")
+    plt.tight_layout()
+    heatmap_plot = cfg.output_dir / "autoencoder_time_feature_heatmap.png"
+    plt.savefig(heatmap_plot, dpi=200)
+    plt.close()
+
+    return {
+        "feature_errors": feature_path,
+        "heatmap": heatmap_path,
+        "feature_plot": feature_plot,
+        "heatmap_plot": heatmap_plot,
+    }
 
 
 def build_parser() -> argparse.ArgumentParser:

@@ -1,0 +1,15 @@
+{
+  "train": "data/processed/smart_grid_clean.parquet",
+  "sequence_length": 48,
+  "val_fraction": 0.15,
+  "test_fraction": 0.15,
+  "random_state": 42,
+  "notes": "Use these split parameters (stratified by fault_type) across detectors for consistent evaluation.",
+  "history": [
+    {
+      "detectors": ["cnn_classifier"],
+      "timestamp": "2025-11-15T10:40:00Z",
+      "description": "Initial stratified split used by CNN classifier training script."
+    }
+  ]
+}

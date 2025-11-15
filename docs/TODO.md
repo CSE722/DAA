@@ -37,7 +37,7 @@
 - [x] Add t-SNE/UMAP visualization scripts for latent structure exploration.
 - [x] Prototype LSTM autoencoder architecture search (encoder depth, bottleneck size, dropout).
 - [x] Compare reconstruction error distributions between normal and fault windows (feature/time heatmaps).
-- [ ] Evaluate compression ratios vs detection quality trade-offs.
+- [x] Evaluate compression ratios vs detection quality trade-offs.
 
 ## 5. Modeling & Detection
 ### 5.1 PCA + Classical Detectors
@@ -51,12 +51,11 @@
 
 ### 5.3 CNN Fault-Type Classifier
 - [x] Architect CNN (1D) for classifying spikes vs dropouts vs cyber anomalies.
-- [ ] Augment dataset with labeled subclasses and evaluate confusion matrix.
+- [x] Augment dataset with labeled subclasses and evaluate confusion matrix. *(stratified split + predictions/CM generated)*
 - [ ] Explore hybrid models (latent features from autoencoder feeding CNN head).
 
-## 6. Evaluation & Validation
 - [ ] Standardize train/val/test splits with stratification over fault types.
-- [ ] Build evaluation harness (`src/detectors/eval.py`) computing accuracy, precision, recall, F1, AUC, detection delay, throughput.
+- [x] Build evaluation harness comparing detectors (`detectors/eval_compare.py` summary CSV).
 - [ ] Run rare-event stress tests with controlled anomaly injection.
 - [ ] Document interpretability insights (feature contributions, latent direction analysis).
 - [ ] Compare full-dimensional vs reduced-dimensional performance in tabular + narrative form.
